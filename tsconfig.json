@@ -1,0 +1,8 @@
+{
+    "files": [
+        "game.ts",
+        "board.ts",
+        "lettertile.ts",
+        "player.ts"
+    ]
+}
