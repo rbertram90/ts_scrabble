@@ -82,27 +82,28 @@ class Game implements GameInterface {
         let content: string = "";
         let p: number = 0;
         
+        content += this.displayGameStatus();
         content += this.board.html();
-        
-        content += '<p>Letters remaining: ' + this.letterBag.length + '</p>';
-        
-        content += '<p>Currently playing: Player ' + (this.playerTurn + 1) + '</p>';
-        
-        // for(; p<this.players.length; p++) {
         content += this.players[this.playerTurn].displayLetters();
-        // }
-        
         content += '<button onclick="window.scrabble.skipTurn()">Skip Turn</button>';
         content += '<button onclick="window.scrabble.submitWord()">Play Word</button>';
         
         document.querySelector(this.gameElementSelector).innerHTML = content;
     }
-    
-    /*
-    public getLetterTileById(id: number) {
-        
+
+    private displayGameStatus(): string {
+        let content: string = "";
+
+        content += '<p>Letters remaining: ' + this.letterBag.length + '</p>';
+
+        for(let p: number = 0; p < this.players.length; p++) {
+            content += '<p>Player ' + (p+1) + ' score: ' + this.players[p].score + '</p>';
+        }
+
+        content += '<p>Currently playing: Player ' + (this.playerTurn + 1) + '</p>';
+
+        return content;
     }
-    */
     
     public skipTurn() {
         
@@ -129,10 +130,12 @@ class Game implements GameInterface {
         let player: Player = this.getCurrentPlayer(); // current player
         
         // Get the word
-        let word: Array<{ word: string, score: number }> = this.findPlayedWords();
+        let words: Array<{ word: Array<LetterTile>, score: number }> = this.findPlayedWords();
         
-        // console.log(word);
-        
+        for(let w: number = 0; w < words.length; w++) {
+            player.score += words[w].score;
+        }
+
         // loop variables
         let tempLetter: LetterTile;
         let t: number = player.letters.length-1;
@@ -156,7 +159,7 @@ class Game implements GameInterface {
         this.nextPlayer();
     }
     
-    public findPlayedWords(): Array<{ word: string, score: number }> {
+    public findPlayedWords(): Array<{ word: Array<LetterTile>, score: number }> {
         let player: Player = this.getCurrentPlayer(); // current player
         
         // create array of played letters in correct order
@@ -217,6 +220,8 @@ class Game implements GameInterface {
         let skipEnd: boolean = false;
         
         let currentword: Array<LetterTile> = [];
+
+        let allwords: Array<{ word: Array<LetterTile>, score: number }> = [];
         
         for(;ol<orderedLetters.length; ol++) {
             tempLetter = orderedLetters[ol];
@@ -228,12 +233,14 @@ class Game implements GameInterface {
                     
                     currentword = this.checkVerticalWord(tempLetter);
                     if(currentword.length > 1) {
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }
                     
                     currentword = this.checkHorizontalWord(tempLetter);
                     if(currentword.length > 1) {
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }                    
                 }
                 else {
@@ -263,14 +270,16 @@ class Game implements GameInterface {
                                     }
                                 }
                                 console.log('getWordScore1');
-                                score += this.getWordScore(currentword);
+                                score = this.getWordScore(currentword);
+                                allwords.push({word: currentword, score: score});
                             }
                         }
                         
                         currentword = this.checkVerticalWord(tempLetter);
                         if(currentword.length > 1) {
                             console.log('getWordScore2');
-                            score += this.getWordScore(currentword);
+                            score = this.getWordScore(currentword);
+                            allwords.push({word: currentword, score: score});
                         }
                         
                     }
@@ -300,12 +309,14 @@ class Game implements GameInterface {
                                     }
                                 }
                                 
-                                score += this.getWordScore(currentword);
+                                score = this.getWordScore(currentword);
+                                allwords.push({word: currentword, score: score});
                             }
                             
                             currentword = this.checkHorizontalWord(tempLetter);
                             if(currentword.length > 1) {
-                                score += this.getWordScore(currentword);
+                                score = this.getWordScore(currentword);
+                                allwords.push({word: currentword, score: score});
                             }
                         }
                     }
@@ -319,7 +330,8 @@ class Game implements GameInterface {
                 if(dir == "across") {
                     currentword = this.checkVerticalWord(tempLetter);
                     if(currentword.length > 1) {
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }
                     
                     if(!skipEnd) {
@@ -333,13 +345,15 @@ class Game implements GameInterface {
                                 at = this.findPlayedTile(at.square.row, at.square.column + 1);
                             }
                         }
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }
                 }
                 if(dir == "down") {
                     currentword = this.checkHorizontalWord(tempLetter);
                     if(currentword.length > 1) {
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }
                     
                     if(!skipEnd) {
@@ -353,7 +367,8 @@ class Game implements GameInterface {
                                 at = this.findPlayedTile(at.square.row + 1, at.square.column);
                             }
                         }
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }
                 }
             }
@@ -362,19 +377,21 @@ class Game implements GameInterface {
                 if(dir == "across") {
                     currentword = this.checkVerticalWord(tempLetter);
                     if(currentword.length > 1) {
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }
                 }
                 else if(dir == "down") {
                     currentword = this.checkHorizontalWord(tempLetter);
                     if(currentword.length > 1) {
-                        score += this.getWordScore(currentword);
+                        score = this.getWordScore(currentword);
+                        allwords.push({word: currentword, score: score});
                     }                    
                 }
             }
         }
         
-        return null;
+        return allwords;
     }
     
     // todo: think of a better name
@@ -402,7 +419,7 @@ class Game implements GameInterface {
         diff = end - start + 1;
         
         // All letters joined
-        if(diff == playerLetters.length) return playerLetters;
+        if(diff == playerLetters.length) return playerLetters.slice();
         
         let lt: LetterTile;
         let nt: LetterTile;
