@@ -103,12 +103,14 @@ var Game = (function () {
         document.querySelector(this.gameElementSelector).innerHTML = content;
     };
     Game.prototype.displayGameStatus = function () {
-        var content = "";
+        var content = "<div id='stats'>";
         content += '<p>Letters remaining: ' + this.letterBag.length + '</p>';
         for (var p = 0; p < this.players.length; p++) {
             content += '<p>Player ' + (p + 1) + ' score: ' + this.players[p].score + '</p>';
         }
         content += '<p>Currently playing: Player ' + (this.playerTurn + 1) + '</p>';
+        content += '<div id="messages"></div>';
+        content += '</div>';
         return content;
     };
     Game.prototype.skipTurn = function () {
@@ -132,6 +134,14 @@ var Game = (function () {
         var player = this.getCurrentPlayer(); // current player
         // Get the word
         var words = this.findPlayedWords();
+        if (words == null) {
+            // an invalid word played
+            document.getElementById('messages').innerHTML = '<span class="error">Invalid Submission - Please correct and try again</span>';
+            return false;
+        }
+        else {
+            document.getElementById('messages').innerHTML = '';
+        }
         for (var w = 0; w < words.length; w++) {
             player.score += words[w].score;
         }
@@ -209,6 +219,7 @@ var Game = (function () {
         var allwords = [];
         for (; ol < orderedLetters.length; ol++) {
             tempLetter = orderedLetters[ol];
+            score = -1;
             if (ol == 0) {
                 if (orderedLetters.length == 1) {
                     // only one letter
@@ -356,6 +367,10 @@ var Game = (function () {
                     }
                 }
             }
+            if (score == 0) {
+                // invalid word
+                return null;
+            }
         }
         return allwords;
     };
@@ -478,7 +493,37 @@ var Game = (function () {
         var ts = 0; // temp score
         var wmp = 1; // word multiplyer
         var log = "";
+        var wordstring = "";
+        var validword = false;
+        // Conver the array of letters to a string
         for (; l < word.length; l++) {
+            wordstring += word[l].letter.toLowerCase();
+        }
+        // Check that it is valid
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            // console.log(xhr.responseXML.documentElement.nodeName);
+            var potentialmatches = JSON.parse(xhr.responseText);
+            // console.log(potentialmatches);
+            // console.log(potentialmatches.indexOf(wordstring));
+            if (potentialmatches.indexOf(wordstring) > -1) {
+                console.log('Word found');
+                validword = true;
+            }
+            else {
+                console.log('Word not found - ' + wordstring);
+            }
+        };
+        xhr.onerror = function () {
+            console.log("Error while getting JSON.");
+        };
+        xhr.open("GET", "/words/" + wordstring.substring(0, 1) + ".json", false);
+        // xhr.responseType = "document";
+        xhr.send();
+        if (!validword) {
+            return 0;
+        }
+        for (l = 0; l < word.length; l++) {
             letter = word[l];
             ts = letter.value;
             if (letter.status == 2) {

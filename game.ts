@@ -92,7 +92,7 @@ class Game implements GameInterface {
     }
 
     private displayGameStatus(): string {
-        let content: string = "";
+        let content: string = "<div id='stats'>";
 
         content += '<p>Letters remaining: ' + this.letterBag.length + '</p>';
 
@@ -101,7 +101,8 @@ class Game implements GameInterface {
         }
 
         content += '<p>Currently playing: Player ' + (this.playerTurn + 1) + '</p>';
-
+        content += '<div id="messages"></div>';
+        content += '</div>';
         return content;
     }
     
@@ -132,6 +133,15 @@ class Game implements GameInterface {
         // Get the word
         let words: Array<{ word: Array<LetterTile>, score: number }> = this.findPlayedWords();
         
+        if(words == null) {
+            // an invalid word played
+            document.getElementById('messages').innerHTML = '<span class="error">Invalid Submission - Please correct and try again</span>';
+            return false;
+        }
+        else {
+            document.getElementById('messages').innerHTML = '';
+        }
+
         for(let w: number = 0; w < words.length; w++) {
             player.score += words[w].score;
         }
@@ -226,6 +236,8 @@ class Game implements GameInterface {
         for(;ol<orderedLetters.length; ol++) {
             tempLetter = orderedLetters[ol];
             
+            score = -1;
+
             if(ol == 0) {
                 if(orderedLetters.length == 1) {
                     // only one letter
@@ -389,8 +401,12 @@ class Game implements GameInterface {
                     }                    
                 }
             }
+
+            if(score == 0) {
+                // invalid word
+                return null;
+            }
         }
-        
         return allwords;
     }
     
@@ -532,8 +548,44 @@ class Game implements GameInterface {
         let ts: number = 0; // temp score
         let wmp: number = 1; // word multiplyer
         let log: string = "";
-        
+        let wordstring: string = "";
+        let validword: boolean = false;
+
+        // Conver the array of letters to a string
         for(;l<word.length;l++) {
+            wordstring += word[l].letter.toLowerCase();
+        }
+
+        // Check that it is valid
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+            // console.log(xhr.responseXML.documentElement.nodeName);
+            var potentialmatches = JSON.parse(xhr.responseText);
+
+            // console.log(potentialmatches);
+            // console.log(potentialmatches.indexOf(wordstring));
+            if(potentialmatches.indexOf(wordstring) > -1) {
+                console.log('Word found');
+                validword = true;
+            }
+            else {
+                console.log('Word not found - ' + wordstring);
+                
+            }
+            
+        }
+        xhr.onerror = function() {
+            console.log("Error while getting JSON.");
+        }
+        xhr.open("GET", "/words/" + wordstring.substring(0, 1)  + ".json", false);
+        // xhr.responseType = "document";
+        xhr.send();
+        
+        if(!validword) {
+            return 0;
+        }
+
+        for(l=0;l<word.length;l++) {
             letter = word[l];
             
             ts = letter.value;

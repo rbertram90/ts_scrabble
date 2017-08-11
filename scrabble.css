@@ -1,12 +1,50 @@
+body {
+    margin: 0px;
+    font-family: arial;
+}
+main {
+    padding: 5px 20px;
+}
+
+header {
+    background-color: #294E80;
+    color: #fff;
+    padding: 5px 20px;
+}
+header h1 {
+    margin: 0px;
+}
+
+button {
+    background-color: #294E80;
+    color: #fff;
+    border: 1px solid #fff;
+    padding: 5px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #18a025;
+}
+
+#stats {
+    float:right;
+}
+
+.error {
+    color: red;
+    font-weight: bold;
+}
+
 .board {
-    width: 750px;
+    width: 600px;
     border-top: 1px solid #666;
     border-left: 1px solid #666;
 }
 .square {
     float: left;
-    height: 50px;
-    width: 50px;
+    height: 40px;
+    width: 40px;
     box-sizing: border-box;
     border: solid #666;
     border-width: 0px 1px 1px 0px;
@@ -22,15 +60,15 @@
 }
 .tile {
     float: left;
-    height: 40px;
-    width: 40px;
+    height: 30px;
+    width: 30px;
     box-sizing: border-box;
     background-color: #F9F098;
     border: 1px solid #000;
     margin: 2px;
     text-align: center;
-    padding-top: 6px;
-    font-size: 18px;
+    padding-top: 4px;
+    font-size: 16px;
     font-family: sans-serif;
     position: relative;
 }
