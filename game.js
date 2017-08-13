@@ -74,7 +74,6 @@ var Game = (function () {
         output += '</select>';
         output += '<button id="startgame" onclick="window.scrabble.start()">Start!</button>';
         document.querySelector(this.gameElementSelector).innerHTML = output;
-        // this.numberOfPlayers = numberOfPlayers;
     };
     /**
      * function start
@@ -131,8 +130,7 @@ var Game = (function () {
         this.nextPlayer();
     };
     Game.prototype.submitWord = function () {
-        var player = this.getCurrentPlayer(); // current player
-        // Get the word
+        var player = this.getCurrentPlayer();
         var words = this.findPlayedWords();
         if (words == null) {
             // an invalid word played
@@ -497,6 +495,18 @@ var Game = (function () {
         var validword = false;
         // Conver the array of letters to a string
         for (; l < word.length; l++) {
+            if (word[l].index == Letter.BLANK && word[l].letter == '') {
+                var blankletter = '';
+                var lettervalid = false;
+                while (!lettervalid) {
+                    blankletter = prompt('What letter should be assigned to blank tile?');
+                    blankletter = blankletter.toUpperCase();
+                    if (blankletter.length == 1 && letterText.indexOf(blankletter) != -1) {
+                        lettervalid = true;
+                    }
+                }
+                word[l].letter = blankletter;
+            }
             wordstring += word[l].letter.toLowerCase();
         }
         // Check that it is valid

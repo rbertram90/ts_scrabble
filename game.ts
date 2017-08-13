@@ -54,8 +54,6 @@ class Game implements GameInterface {
         output += '<button id="startgame" onclick="window.scrabble.start()">Start!</button>';
         
         document.querySelector(this.gameElementSelector).innerHTML = output;
-        
-        // this.numberOfPlayers = numberOfPlayers;
     }
     
     /**
@@ -127,10 +125,7 @@ class Game implements GameInterface {
     }
     
     public submitWord() {
-        
-        let player: Player = this.getCurrentPlayer(); // current player
-        
-        // Get the word
+        let player: Player = this.getCurrentPlayer();
         let words: Array<{ word: Array<LetterTile>, score: number }> = this.findPlayedWords();
         
         if(words == null) {
@@ -553,6 +548,20 @@ class Game implements GameInterface {
 
         // Conver the array of letters to a string
         for(;l<word.length;l++) {
+
+            if(word[l].index == Letter.BLANK && word[l].letter == '') {
+                let blankletter: string = '';
+                let lettervalid: boolean = false;
+                while(!lettervalid) {
+                    blankletter = prompt('What letter should be assigned to blank tile?');
+                    blankletter = blankletter.toUpperCase();
+                    if(blankletter.length == 1 && letterText.indexOf(blankletter) != -1) {
+                        lettervalid = true;
+                    }
+                }
+                word[l].letter = blankletter;
+            }
+
             wordstring += word[l].letter.toLowerCase();
         }
 

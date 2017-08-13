@@ -7,7 +7,6 @@ Project Status: **Early stages of development**
 Compiled JavaScript is included so just download and run index.html
 
 ## Essential todos
-* Add validation for blank tiles - ask user what letter should be assigned
 * Handle game end
 
 ## Niceties

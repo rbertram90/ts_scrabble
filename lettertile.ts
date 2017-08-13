@@ -1,6 +1,6 @@
 interface LetterTileInterface {
     readonly index: number;
-    readonly letter: string;
+    letter: string;
     readonly value: number;
     readonly status: number;
 }
@@ -8,7 +8,7 @@ interface LetterTileInterface {
 class LetterTile implements LetterTileInterface {
     
     readonly index: number; // A = 0, B = 1...
-    readonly letter: string; // A,B,C...
+    public letter: string; // A,B,C...
     readonly value: number; // How many points it's worth
     public status: number;  // 0 = in bag, 1 = on player bench, 2 = in play (not locked), 3 = in play (locked)
     public id: number;
@@ -29,7 +29,8 @@ class LetterTile implements LetterTileInterface {
         
         if(this.isDraggable()) html += ' draggable="true" ondragstart="LetterTile.drag(event)"';
         
-        html += '>' + this.letter + '</div>'
+        if(this.index == Letter.BLANK) html += '><span class="letterblank">' + this.letter + '</span></div>';
+        else html += '>' + this.letter + '</div>';
         
         return html;
     }

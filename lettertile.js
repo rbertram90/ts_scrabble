@@ -11,7 +11,10 @@ var LetterTile = (function () {
         var html = '<div id="' + this.id + '" class="tile" data-value="' + this.value + '"';
         if (this.isDraggable())
             html += ' draggable="true" ondragstart="LetterTile.drag(event)"';
-        html += '>' + this.letter + '</div>';
+        if (this.index == Letter.BLANK)
+            html += '><span class="letterblank">' + this.letter + '</span></div>';
+        else
+            html += '>' + this.letter + '</div>';
         return html;
     };
     LetterTile.prototype.getElement = function () {

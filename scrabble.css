@@ -87,3 +87,8 @@ button:hover {
 .tile[data-value='5']:after { content: '5'; }
 .tile[data-value='8']:after { content: '8'; }
 .tile[data-value='10']:after { content: '10'; }
+
+.letterblank {
+    font-style: italic;
+    color: #555555;
+}
