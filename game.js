@@ -1,3 +1,9 @@
+/**
+ * class Game
+ *
+ * @param elementselector: DOM element query selector string
+ * @description: Main game logic
+ */
 var Colour;
 (function (Colour) {
     Colour[Colour["Grey"] = 0] = "Grey";
@@ -8,14 +14,6 @@ var Colour;
     Colour[Colour["Yellow"] = 5] = "Yellow";
 })(Colour || (Colour = {}));
 ;
-var colours = [
-    '#CCCCCC',
-    '#FF0000',
-    '#005CFF',
-    '#00C3FF',
-    '#FF00F8',
-    '#FFBA00',
-];
 var Letter;
 (function (Letter) {
     Letter[Letter["A"] = 0] = "A";
@@ -47,18 +45,10 @@ var Letter;
     Letter[Letter["BLANK"] = 26] = "BLANK";
 })(Letter || (Letter = {}));
 ;
-var letterValues = [
-    1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10, 0
-];
-var letterCounts = [
-    9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1, 2
-];
-var letterText = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ''
-];
 var Game = (function () {
     function Game(elementselector) {
         this.numberOfPlayers = 2;
+        this.skipValidation = false; // good for testing...
         this.players = [];
         this.gameElementSelector = elementselector;
         window.scrabble = this;
@@ -161,79 +151,32 @@ var Game = (function () {
         }
         this.nextPlayer();
     };
+    /**
+     * function findPlayedWords
+     * @return Array of words made with tiles played in last turn along with a score for each
+     */
     Game.prototype.findPlayedWords = function () {
-        var player = this.getCurrentPlayer(); // current player
-        // create array of played letters in correct order
-        var pl = 0;
-        var tempLetter;
-        var orderedLetters = [];
-        for (; pl < player.letters.length; pl++) {
-            tempLetter = player.letters[pl];
-            if (tempLetter.status == 2) {
-                // letter played
-                if (orderedLetters.length == 0) {
-                    orderedLetters.push(tempLetter);
-                }
-                else {
-                    var ol_1 = 0;
-                    var tempLetter2 = void 0;
-                    var inserted = false;
-                    for (; ol_1 < orderedLetters.length; ol_1++) {
-                        tempLetter2 = orderedLetters[ol_1];
-                        if (tempLetter2.square.row == tempLetter.square.row) {
-                            if (tempLetter.square.column < tempLetter2.square.column) {
-                                // insert at this position
-                                orderedLetters.splice(ol_1, 0, tempLetter);
-                                inserted = true;
-                                break;
-                            }
-                        }
-                        else if (tempLetter2.square.column == tempLetter.square.column) {
-                            if (tempLetter.square.row < tempLetter2.square.row) {
-                                // insert at this position
-                                orderedLetters.splice(ol_1, 0, tempLetter);
-                                inserted = true;
-                                break;
-                            }
-                        }
-                        else {
-                            // Illegal move?
-                            console.log('huh?');
-                        }
-                    }
-                    if (!inserted) {
-                        orderedLetters.push(tempLetter);
-                    }
-                }
-            }
-        }
+        // Get all letters that the user has placed on the board this turn
+        // in the correct order
+        var orderedLetters = this.getOrderedPlayedLetters();
         // now check for what word(s) it's attached to
-        var ol = 0;
         var at;
         var dir = "";
         var score = 0;
         var skipEnd = false;
+        var tempLetter;
         var currentword = [];
         var allwords = [];
-        for (; ol < orderedLetters.length; ol++) {
+        for (var ol = 0; ol < orderedLetters.length; ol++) {
             tempLetter = orderedLetters[ol];
             score = -1;
             if (ol == 0) {
+                // first letter
                 if (orderedLetters.length == 1) {
-                    // only one letter
-                    // dir = "none";
-                    currentword = this.checkVerticalWord(tempLetter);
-                    if (currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({ word: currentword, score: score });
-                    }
-                    currentword = this.checkHorizontalWord(tempLetter);
-                    if (currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({ word: currentword, score: score });
-                    }
+                    dir = "both";
                 }
                 else {
+                    // more than one letter placed
                     if (orderedLetters[ol + 1].square.row == tempLetter.square.row) {
                         dir = "across";
                         if (tempLetter.square.column > 0) {
@@ -255,16 +198,9 @@ var Game = (function () {
                                         at = this.findPlayedTile(at.square.row, at.square.column + 1);
                                     }
                                 }
-                                console.log('getWordScore1');
                                 score = this.getWordScore(currentword);
                                 allwords.push({ word: currentword, score: score });
                             }
-                        }
-                        currentword = this.checkVerticalWord(tempLetter);
-                        if (currentword.length > 1) {
-                            console.log('getWordScore2');
-                            score = this.getWordScore(currentword);
-                            allwords.push({ word: currentword, score: score });
                         }
                     }
                     else if (orderedLetters[ol + 1].square.column == tempLetter.square.column) {
@@ -291,11 +227,6 @@ var Game = (function () {
                                 score = this.getWordScore(currentword);
                                 allwords.push({ word: currentword, score: score });
                             }
-                            currentword = this.checkHorizontalWord(tempLetter);
-                            if (currentword.length > 1) {
-                                score = this.getWordScore(currentword);
-                                allwords.push({ word: currentword, score: score });
-                            }
                         }
                     }
                     else {
@@ -306,11 +237,6 @@ var Game = (function () {
             else if (ol === (orderedLetters.length - 1)) {
                 // Last letter
                 if (dir == "across") {
-                    currentword = this.checkVerticalWord(tempLetter);
-                    if (currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({ word: currentword, score: score });
-                    }
                     if (!skipEnd) {
                         currentword = this.getAllLettersInWord(orderedLetters, dir);
                         // haven't already checked end
@@ -327,11 +253,6 @@ var Game = (function () {
                     }
                 }
                 if (dir == "down") {
-                    currentword = this.checkHorizontalWord(tempLetter);
-                    if (currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({ word: currentword, score: score });
-                    }
                     if (!skipEnd) {
                         currentword = this.getAllLettersInWord(orderedLetters, dir);
                         // haven't already checked end
@@ -348,21 +269,18 @@ var Game = (function () {
                     }
                 }
             }
-            else {
-                // In the middle
-                if (dir == "across") {
-                    currentword = this.checkVerticalWord(tempLetter);
-                    if (currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({ word: currentword, score: score });
-                    }
+            if (dir == "across" || dir == "both") {
+                currentword = this.checkVerticalWord(tempLetter);
+                if (currentword.length > 1) {
+                    score = this.getWordScore(currentword);
+                    allwords.push({ word: currentword, score: score });
                 }
-                else if (dir == "down") {
-                    currentword = this.checkHorizontalWord(tempLetter);
-                    if (currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({ word: currentword, score: score });
-                    }
+            }
+            else if (dir == "down" || dir == "both") {
+                currentword = this.checkHorizontalWord(tempLetter);
+                if (currentword.length > 1) {
+                    score = this.getWordScore(currentword);
+                    allwords.push({ word: currentword, score: score });
                 }
             }
             if (score == 0) {
@@ -371,6 +289,52 @@ var Game = (function () {
             }
         }
         return allwords;
+    };
+    Game.prototype.getOrderedPlayedLetters = function () {
+        var player = this.getCurrentPlayer();
+        // Create an array of played letters, in the order that they are placed on the board
+        var tempLetter;
+        var orderedLetters = [];
+        for (var pl = 0; pl < player.letters.length; pl++) {
+            // 'pl = playerletter'
+            tempLetter = player.letters[pl];
+            if (tempLetter.status == 2) {
+                // letter played this turn
+                if (orderedLetters.length == 0) {
+                    orderedLetters.push(tempLetter);
+                    continue;
+                }
+                var tempLetter2 = void 0;
+                var inserted = false;
+                for (var ol = 0; ol < orderedLetters.length; ol++) {
+                    tempLetter2 = orderedLetters[ol];
+                    if (tempLetter2.square.row == tempLetter.square.row) {
+                        if (tempLetter.square.column < tempLetter2.square.column) {
+                            // insert at this position
+                            orderedLetters.splice(ol, 0, tempLetter);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    else if (tempLetter2.square.column == tempLetter.square.column) {
+                        if (tempLetter.square.row < tempLetter2.square.row) {
+                            // insert at this position
+                            orderedLetters.splice(ol, 0, tempLetter);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    else {
+                        // Illegal move?
+                        console.log('huh?');
+                    }
+                }
+                if (!inserted) {
+                    orderedLetters.push(tempLetter);
+                }
+            }
+        }
+        return orderedLetters;
     };
     // todo: think of a better name
     // basically if the player has added letters either side of a previously
@@ -501,7 +465,7 @@ var Game = (function () {
                 while (!lettervalid) {
                     blankletter = prompt('What letter should be assigned to blank tile?');
                     blankletter = blankletter.toUpperCase();
-                    if (blankletter.length == 1 && letterText.indexOf(blankletter) != -1) {
+                    if (blankletter.length == 1 && Game.letterText.indexOf(blankletter) != -1) {
                         lettervalid = true;
                     }
                 }
@@ -509,29 +473,31 @@ var Game = (function () {
             }
             wordstring += word[l].letter.toLowerCase();
         }
-        // Check that it is valid
-        var xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-            // console.log(xhr.responseXML.documentElement.nodeName);
-            var potentialmatches = JSON.parse(xhr.responseText);
-            // console.log(potentialmatches);
-            // console.log(potentialmatches.indexOf(wordstring));
-            if (potentialmatches.indexOf(wordstring) > -1) {
-                console.log('Word found');
-                validword = true;
+        if (!this.skipValidation) {
+            // Check that it is valid
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                // console.log(xhr.responseXML.documentElement.nodeName);
+                var potentialmatches = JSON.parse(xhr.responseText);
+                // console.log(potentialmatches);
+                // console.log(potentialmatches.indexOf(wordstring));
+                if (potentialmatches.indexOf(wordstring) > -1) {
+                    console.log('Word found');
+                    validword = true;
+                }
+                else {
+                    console.log('Word not found - ' + wordstring);
+                }
+            };
+            xhr.onerror = function () {
+                console.log("Error while getting JSON.");
+            };
+            xhr.open("GET", "/words/" + wordstring.substring(0, 1) + ".json", false);
+            // xhr.responseType = "document";
+            xhr.send();
+            if (!validword) {
+                return 0;
             }
-            else {
-                console.log('Word not found - ' + wordstring);
-            }
-        };
-        xhr.onerror = function () {
-            console.log("Error while getting JSON.");
-        };
-        xhr.open("GET", "/words/" + wordstring.substring(0, 1) + ".json", false);
-        // xhr.responseType = "document";
-        xhr.send();
-        if (!validword) {
-            return 0;
         }
         for (l = 0; l < word.length; l++) {
             letter = word[l];
@@ -607,8 +573,8 @@ var Game = (function () {
         var avialableLetters = [];
         var l;
         var c;
-        for (l = 0; l < letterCounts.length; l++) {
-            for (c = 0; c < letterCounts[l]; c++) {
+        for (l = 0; l < Game.letterCounts.length; l++) {
+            for (c = 0; c < Game.letterCounts[l]; c++) {
                 avialableLetters.push(l);
             }
         }
@@ -639,5 +605,26 @@ var Game = (function () {
             this.players.push(player);
         }
     };
+    // Hex codes corressponding to the Colour enums
+    Game.colours = [
+        '#CCCCCC',
+        '#FF0000',
+        '#005CFF',
+        '#00C3FF',
+        '#FF00F8',
+        '#FFBA00',
+    ];
+    // How many points each letter of the alphabet is worth (A-Z + blank)
+    Game.letterValues = [
+        1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10, 0
+    ];
+    // How many of each letter exists in the game (A-Z + blank)
+    Game.letterCounts = [
+        9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1, 2
+    ];
+    // Label for each letter (A-Z + blank)
+    Game.letterText = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ''
+    ];
     return Game;
 }());

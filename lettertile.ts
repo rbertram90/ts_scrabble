@@ -16,8 +16,8 @@ class LetterTile implements LetterTileInterface {
     
     public constructor(letterIndex: number) {
         this.index = letterIndex;
-        this.letter = letterText[letterIndex];
-        this.value = letterValues[letterIndex];
+        this.letter = Game.letterText[letterIndex];
+        this.value = Game.letterValues[letterIndex];
         this.status = 0;
         
         // console.log("Created " + this.letter + " value = " + this.value);

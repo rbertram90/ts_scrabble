@@ -1,3 +1,9 @@
+/**
+ * board.ts
+ *
+ * class Board
+ * class Square
+ */
 var Board = (function () {
     function Board() {
         this.game = null;
@@ -39,7 +45,6 @@ var Board = (function () {
         2 = triple letter
         3 = double word
         4 = triple word
-        5 = start?
     */
     Board.bonuses = [
         [4, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 4],
@@ -81,8 +86,7 @@ var Square = (function () {
         var squareIndex = ev.target.id.split("-");
         var targetSquare = window.scrabble.board.squares[squareIndex[1]][squareIndex[2]];
         var currentPlayer = window.scrabble.getCurrentPlayer();
-        var tileIndex = 0;
-        for (; tileIndex < currentPlayer.letters.length; tileIndex++) {
+        for (var tileIndex = 0; tileIndex < currentPlayer.letters.length; tileIndex++) {
             if (currentPlayer.letters[tileIndex].id == parseInt(data)) {
                 var droppedTile = currentPlayer.letters[tileIndex];
                 if (droppedTile.square != null) {
@@ -91,7 +95,6 @@ var Square = (function () {
                 targetSquare.tile = droppedTile;
                 droppedTile.square = targetSquare;
                 droppedTile.status = 2; // Mark as being played but not locked
-                // currentPlayer.removeLetterTile(tileIndex);
                 break;
             }
         }
@@ -119,7 +122,7 @@ var Square = (function () {
                 bgcolour = Colour.Yellow;
                 break;
         }
-        output = '<div id="' + this.id + '" class="square" ondrop="Square.drop(event)" ondragover="Square.allowDrop(event)" style="background-color:' + colours[bgcolour] + '">';
+        output = '<div id="' + this.id + '" class="square" ondrop="Square.drop(event)" ondragover="Square.allowDrop(event)" style="background-color:' + Game.colours[bgcolour] + '">';
         if (this.tile != null)
             output += this.tile.html();
         output += '</div>';

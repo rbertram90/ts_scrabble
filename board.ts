@@ -1,8 +1,24 @@
-interface Board {
-    
+/**
+ * board.ts
+ * 
+ * class Board
+ * class Square
+ */
+
+interface BoardInterface {
+    game: Game;
 }
 
-class Board {
+interface SquareInterface {
+    readonly id     : string;
+    readonly bonus  : number;
+    readonly row    : number;
+    readonly column : number;
+    board    : Board;
+    tile     : LetterTile;
+}
+
+class Board implements BoardInterface {
     
     public game: Game = null;
     /*
@@ -12,9 +28,8 @@ class Board {
         2 = triple letter
         3 = double word
         4 = triple word
-        5 = start?
     */
-    public static bonuses: number[][] = [
+    public static bonuses: NumberMatrix = [
         [4,0,0,1,0,0,0,4,0,0,0,1,0,0,4],
         [0,3,0,0,0,2,0,0,0,2,0,0,0,3,0],
         [0,0,3,0,0,0,1,0,1,0,0,0,3,0,0],
@@ -77,14 +92,14 @@ class Board {
     }
 }
 
-class Square {
+class Square implements SquareInterface {
     
-    readonly id: string;
-    readonly bonus: number;
-    readonly row: number;
-    readonly column: number;
-    public board: Board = null;
-    public tile: LetterTile = null;
+    readonly id     : string;
+    readonly bonus  : number;
+    readonly row    : number;
+    readonly column : number;
+    public board    : Board = null;
+    public tile     : LetterTile = null;
     
     public constructor(row, column) {
         this.id = 'sq-' + row + '-' + column;
@@ -106,11 +121,9 @@ class Square {
         
         let squareIndex: Array<any> = ev.target.id.split("-");
         let targetSquare: Square = (<any>window).scrabble.board.squares[squareIndex[1]][squareIndex[2]];
-        
         let currentPlayer: Player = (<any>window).scrabble.getCurrentPlayer();
-        let tileIndex: number = 0;
         
-        for(;tileIndex < currentPlayer.letters.length; tileIndex++) {
+        for(let tileIndex = 0; tileIndex < currentPlayer.letters.length; tileIndex++) {
             if(currentPlayer.letters[tileIndex].id == parseInt(data)) {
                 let droppedTile: LetterTile = currentPlayer.letters[tileIndex];
                 
@@ -121,8 +134,6 @@ class Square {
                 targetSquare.tile = droppedTile;
                 droppedTile.square = targetSquare;
                 droppedTile.status = 2; // Mark as being played but not locked
-                
-                // currentPlayer.removeLetterTile(tileIndex);
                 break;
             }
         }
@@ -142,7 +153,7 @@ class Square {
             case 5: bgcolour = Colour.Yellow; break;
         }
         
-        output = '<div id="' + this.id + '" class="square" ondrop="Square.drop(event)" ondragover="Square.allowDrop(event)" style="background-color:' + colours[bgcolour] + '">';
+        output = '<div id="' + this.id + '" class="square" ondrop="Square.drop(event)" ondragover="Square.allowDrop(event)" style="background-color:' + Game.colours[bgcolour] + '">';
         
         if(this.tile != null) output += this.tile.html();
         

@@ -1,40 +1,56 @@
+/**
+ * class Game
+ * 
+ * @param elementselector: DOM element query selector string
+ * @description: Main game logic
+ */
+
 interface GameInterface {
     numberOfPlayers: number;
 }
 
+interface NumberMatrix {
+    [index: number]: Array<number>;
+}
+
 enum Colour {Grey, Red, LightBlue, DarkBlue, Pink, Yellow};
-let colours: string[] = [
-    '#CCCCCC',
-    '#FF0000',
-    '#005CFF',
-    '#00C3FF',
-    '#FF00F8',
-    '#FFBA00',
-];
-
 enum Letter {A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,BLANK};
-let letterValues: number[] = [
-    1,3,3,2,1,4,2,4,1,8,5,1,3,1,1,3,10,1,1,1,1,4,4,8,4,10,0
-];
-let letterCounts: number[] = [
-    9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1,2
-];
-let letterText: string[] = [
-    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',''
-];
-
 
 class Game implements GameInterface {
-    
+
     public numberOfPlayers: number = 2;
-    
-    private board: Board;
-    private letterBag: LetterTile[];
-    private playedLetters: LetterTile[];
-    private players: Player[] = [];
-    private playerTurn: number;
+    public skipValidation : boolean = false; // good for testing...
+
+    private board         : Board;
+    private letterBag     : LetterTile[];
+    private playedLetters : LetterTile[];
+    private players       : Player[] = [];
+    private playerTurn    : number;
     private gameElementSelector: string;
+
+    // Hex codes corressponding to the Colour enums
+    public static colours: string[] = [
+        '#CCCCCC', // Grey
+        '#FF0000', // Red
+        '#005CFF', // LightBlue
+        '#00C3FF', // DarkBlue
+        '#FF00F8', // Pink
+        '#FFBA00', // Yellow
+    ];
     
+    // How many points each letter of the alphabet is worth (A-Z + blank)
+    public static letterValues: number[] = [
+        1,3,3,2,1,4,2,4,1,8,5,1,3,1,1,3,10,1,1,1,1,4,4,8,4,10,0
+    ];
+    // How many of each letter exists in the game (A-Z + blank)
+    public static letterCounts: number[] = [
+        9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,4,6,4,2,2,1,2,1,2
+    ];
+    // Label for each letter (A-Z + blank)
+    public static letterText: string[] = [
+        'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',''
+    ];
+
     public constructor(elementselector: string) {
         this.gameElementSelector = elementselector;
         (<any>window).scrabble = this;
@@ -164,93 +180,38 @@ class Game implements GameInterface {
         this.nextPlayer();
     }
     
+    /**
+     * function findPlayedWords
+     * @return Array of words made with tiles played in last turn along with a score for each
+     */
     public findPlayedWords(): Array<{ word: Array<LetterTile>, score: number }> {
-        let player: Player = this.getCurrentPlayer(); // current player
-        
-        // create array of played letters in correct order
-        let pl: number = 0;
-        let tempLetter: LetterTile;
-        let orderedLetters: Array<LetterTile> = [];
-        
-        for(;pl<player.letters.length;pl++) {
-            tempLetter = player.letters[pl];
-            
-            if(tempLetter.status == 2) {
-                // letter played
-                if(orderedLetters.length == 0) {
-                    orderedLetters.push(tempLetter);
-                }
-                else {
-                    let ol: number = 0;
-                    let tempLetter2: LetterTile;
-                    let inserted: boolean = false;
-                    for(;ol<orderedLetters.length; ol++) {
-                        tempLetter2 = orderedLetters[ol];
-                        
-                        if(tempLetter2.square.row == tempLetter.square.row) {
-                            if(tempLetter.square.column < tempLetter2.square.column) {
-                                // insert at this position
-                                orderedLetters.splice(ol, 0, tempLetter);
-                                inserted = true;
-                                break;
-                            }
-                        }
-                        else if(tempLetter2.square.column == tempLetter.square.column) {
-                            if(tempLetter.square.row < tempLetter2.square.row) {
-                                // insert at this position
-                                orderedLetters.splice(ol, 0, tempLetter);
-                                inserted = true;
-                                break;
-                            }
-                        }
-                        else {
-                            // Illegal move?
-                            console.log('huh?');
-                        }
-                    }
-                    
-                    if(!inserted) {
-                        orderedLetters.push(tempLetter);
-                    }
-                }
-            }
-        }
-        
+
+        // Get all letters that the user has placed on the board this turn
+        // in the correct order
+        let orderedLetters: Array<LetterTile> = this.getOrderedPlayedLetters();
         
         // now check for what word(s) it's attached to
-        let ol: number = 0;
         let at: LetterTile;
         let dir: string = "";
         let score: number = 0;
         let skipEnd: boolean = false;
+        let tempLetter: LetterTile;
         
         let currentword: Array<LetterTile> = [];
-
         let allwords: Array<{ word: Array<LetterTile>, score: number }> = [];
         
-        for(;ol<orderedLetters.length; ol++) {
+        for(let ol: number = 0; ol < orderedLetters.length; ol++) {
             tempLetter = orderedLetters[ol];
             
             score = -1;
 
             if(ol == 0) {
+                // first letter
                 if(orderedLetters.length == 1) {
-                    // only one letter
-                    // dir = "none";
-                    
-                    currentword = this.checkVerticalWord(tempLetter);
-                    if(currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({word: currentword, score: score});
-                    }
-                    
-                    currentword = this.checkHorizontalWord(tempLetter);
-                    if(currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({word: currentword, score: score});
-                    }                    
+                    dir = "both"
                 }
                 else {
+                    // more than one letter placed
                     if(orderedLetters[ol+1].square.row == tempLetter.square.row) {
                         dir = "across"
                         
@@ -276,19 +237,10 @@ class Game implements GameInterface {
                                         at = this.findPlayedTile(at.square.row, at.square.column + 1);
                                     }
                                 }
-                                console.log('getWordScore1');
                                 score = this.getWordScore(currentword);
                                 allwords.push({word: currentword, score: score});
                             }
                         }
-                        
-                        currentword = this.checkVerticalWord(tempLetter);
-                        if(currentword.length > 1) {
-                            console.log('getWordScore2');
-                            score = this.getWordScore(currentword);
-                            allwords.push({word: currentword, score: score});
-                        }
-                        
                     }
                     else if(orderedLetters[ol+1].square.column == tempLetter.square.column) {
                         dir = "down"
@@ -319,12 +271,6 @@ class Game implements GameInterface {
                                 score = this.getWordScore(currentword);
                                 allwords.push({word: currentword, score: score});
                             }
-                            
-                            currentword = this.checkHorizontalWord(tempLetter);
-                            if(currentword.length > 1) {
-                                score = this.getWordScore(currentword);
-                                allwords.push({word: currentword, score: score});
-                            }
                         }
                     }
                     else {
@@ -335,12 +281,6 @@ class Game implements GameInterface {
             else if(ol === (orderedLetters.length-1)) {
                 // Last letter
                 if(dir == "across") {
-                    currentword = this.checkVerticalWord(tempLetter);
-                    if(currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({word: currentword, score: score});
-                    }
-                    
                     if(!skipEnd) {
                         currentword = this.getAllLettersInWord(orderedLetters, dir);
                         // haven't already checked end
@@ -357,12 +297,6 @@ class Game implements GameInterface {
                     }
                 }
                 if(dir == "down") {
-                    currentword = this.checkHorizontalWord(tempLetter);
-                    if(currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({word: currentword, score: score});
-                    }
-                    
                     if(!skipEnd) {
                         currentword = this.getAllLettersInWord(orderedLetters, dir);
                         // haven't already checked end
@@ -379,22 +313,20 @@ class Game implements GameInterface {
                     }
                 }
             }
-            else {
-                // In the middle
-                if(dir == "across") {
-                    currentword = this.checkVerticalWord(tempLetter);
-                    if(currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({word: currentword, score: score});
-                    }
+
+            if(dir == "across" || dir == "both") {
+                currentword = this.checkVerticalWord(tempLetter);
+                if(currentword.length > 1) {
+                    score = this.getWordScore(currentword);
+                    allwords.push({word: currentword, score: score});
                 }
-                else if(dir == "down") {
-                    currentword = this.checkHorizontalWord(tempLetter);
-                    if(currentword.length > 1) {
-                        score = this.getWordScore(currentword);
-                        allwords.push({word: currentword, score: score});
-                    }                    
-                }
+            }
+            else if(dir == "down" || dir == "both") {
+                currentword = this.checkHorizontalWord(tempLetter);
+                if(currentword.length > 1) {
+                    score = this.getWordScore(currentword);
+                    allwords.push({word: currentword, score: score});
+                }                    
             }
 
             if(score == 0) {
@@ -403,6 +335,61 @@ class Game implements GameInterface {
             }
         }
         return allwords;
+    }
+
+
+    public getOrderedPlayedLetters(): Array<LetterTile> {
+        let player: Player = this.getCurrentPlayer();
+        
+        // Create an array of played letters, in the order that they are placed on the board
+        let tempLetter: LetterTile;
+        let orderedLetters: Array<LetterTile> = [];
+        
+        for(let pl: number = 0; pl < player.letters.length; pl++) {
+            // 'pl = playerletter'
+            tempLetter = player.letters[pl];
+            
+            if(tempLetter.status == 2) {
+                // letter played this turn
+                if(orderedLetters.length == 0) {
+                    orderedLetters.push(tempLetter);
+                    continue;
+                }
+                
+                let tempLetter2: LetterTile;
+                let inserted: boolean = false;
+                for(let ol: number = 0; ol < orderedLetters.length; ol++) {
+                    tempLetter2 = orderedLetters[ol];
+                    
+                    if(tempLetter2.square.row == tempLetter.square.row) {
+                        if(tempLetter.square.column < tempLetter2.square.column) {
+                            // insert at this position
+                            orderedLetters.splice(ol, 0, tempLetter);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    else if(tempLetter2.square.column == tempLetter.square.column) {
+                        if(tempLetter.square.row < tempLetter2.square.row) {
+                            // insert at this position
+                            orderedLetters.splice(ol, 0, tempLetter);
+                            inserted = true;
+                            break;
+                        }
+                    }
+                    else {
+                        // Illegal move?
+                        console.log('huh?');
+                    }
+                }
+                
+                if(!inserted) {
+                    orderedLetters.push(tempLetter);
+                }
+            }
+        }
+
+        return orderedLetters;
     }
     
     // todo: think of a better name
@@ -555,7 +542,7 @@ class Game implements GameInterface {
                 while(!lettervalid) {
                     blankletter = prompt('What letter should be assigned to blank tile?');
                     blankletter = blankletter.toUpperCase();
-                    if(blankletter.length == 1 && letterText.indexOf(blankletter) != -1) {
+                    if(blankletter.length == 1 && Game.letterText.indexOf(blankletter) != -1) {
                         lettervalid = true;
                     }
                 }
@@ -565,33 +552,36 @@ class Game implements GameInterface {
             wordstring += word[l].letter.toLowerCase();
         }
 
-        // Check that it is valid
-        var xhr = new XMLHttpRequest();
-        xhr.onload = function() {
-            // console.log(xhr.responseXML.documentElement.nodeName);
-            var potentialmatches = JSON.parse(xhr.responseText);
+        if(!this.skipValidation) { // testing
 
-            // console.log(potentialmatches);
-            // console.log(potentialmatches.indexOf(wordstring));
-            if(potentialmatches.indexOf(wordstring) > -1) {
-                console.log('Word found');
-                validword = true;
-            }
-            else {
-                console.log('Word not found - ' + wordstring);
+            // Check that it is valid
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function() {
+                // console.log(xhr.responseXML.documentElement.nodeName);
+                var potentialmatches = JSON.parse(xhr.responseText);
+
+                // console.log(potentialmatches);
+                // console.log(potentialmatches.indexOf(wordstring));
+                if(potentialmatches.indexOf(wordstring) > -1) {
+                    console.log('Word found');
+                    validword = true;
+                }
+                else {
+                    console.log('Word not found - ' + wordstring);
+                    
+                }
                 
             }
+            xhr.onerror = function() {
+                console.log("Error while getting JSON.");
+            }
+            xhr.open("GET", "/words/" + wordstring.substring(0, 1)  + ".json", false);
+            // xhr.responseType = "document";
+            xhr.send();
             
-        }
-        xhr.onerror = function() {
-            console.log("Error while getting JSON.");
-        }
-        xhr.open("GET", "/words/" + wordstring.substring(0, 1)  + ".json", false);
-        // xhr.responseType = "document";
-        xhr.send();
-        
-        if(!validword) {
-            return 0;
+            if(!validword) {
+                return 0;
+            }
         }
 
         for(l=0;l<word.length;l++) {
@@ -687,8 +677,8 @@ class Game implements GameInterface {
         let l: number;
         let c: number;
         
-        for(l = 0; l < letterCounts.length; l++) {
-            for(c = 0; c < letterCounts[l]; c++) {
+        for(l = 0; l < Game.letterCounts.length; l++) {
+            for(c = 0; c < Game.letterCounts[l]; c++) {
                 avialableLetters.push(l);
             }
         }
